@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -9,10 +10,9 @@ class Crew(models.Model):
     class Meta:
         unique_together = ('first_name', 'last_name')
         ordering = ['first_name', 'last_name']
-        index_together = ('first_name', 'last_name')
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name}
+        return f"{self.first_name} {self.last_name}"
 
 
 class TrainType(models.Model):
@@ -65,6 +65,37 @@ class Route(models.Model):
         return f"{self.source} -> {self.destination}"
 
 
+class Journey(models.Model):
+    route = models.ForeignKey(Route, on_delete=models.CASCADE)
+    train = models.ForeignKey(Train, on_delete=models.CASCADE)
+    departure_time = models.DateTimeField()
+    arrival_time = models.DateTimeField()
+
+    def __str__(self):
+        return f"{self.train} -> {self.route}"
+
+
 class Order(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = get_user_model()
+
+    def __str__(self):
+        return f"{self.created_at}"
 
 
+class Ticket(models.Model):
+    cargo = models.IntegerField(
+        validators=[
+            MinValueValidator(0)
+        ]
+    )
+    seat = models.IntegerField(
+        validators=[
+            MinValueValidator(0)
+        ]
+    )
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.cargo} {self.seat} {self.order}"
