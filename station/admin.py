@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from station.models import Ticket, Order, Crew, TrainType, Train
+from station.models import Ticket, Order, Crew, TrainType, Train, Station
 
 
 @admin.register(Crew)
@@ -23,6 +23,13 @@ class TrainAdmin(admin.ModelAdmin):
     model = Train
     list_filter = ["name", "train_type"]
     search_fields = ["name", "train_type__name"]
+
+
+@admin.register(Station)
+class StationAdmin(admin.ModelAdmin):
+    model = Station
+    list_filter = ["name"]
+    search_fields = ["name"]
 
 
 class TicketInline(admin.TabularInline):

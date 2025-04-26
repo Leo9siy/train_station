@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
-from station.models import Crew, TrainType, Train, Station, Route, Journey, Order, Ticket, validate_name
+from station.models import (Crew, TrainType, Train,
+                            Station, Route, Journey,
+                            Order, Ticket, validate_name,
+                            validate_latitude)
 
 
 class CrewSerializer(serializers.ModelSerializer):
@@ -43,6 +46,12 @@ class StationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Station
         fields = ["id", "name", "latitude", "longitude"]
+
+    def validate(self, data):
+        for name in ["latitude", "longitude"]:
+            validate_latitude(data[name])
+
+        return data
 
 
 class RouteSerializer(serializers.ModelSerializer):

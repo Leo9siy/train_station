@@ -18,21 +18,22 @@ class TrainTypeViewSet(viewsets.ModelViewSet):
 
 
 class TrainViewSet(viewsets.ModelViewSet):
+    queryset = Train.objects.all()
+
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
             return TrainDetailSerializer
         return TrainSerializer
 
     def get_queryset(self):
-        self.queryset = Train.objects.all()
-
-        params = self.request.query_params.get("train_type", None)
-        if params:
-            ids = [int(param) for param in params.split(",")]
-            self.queryset = self.queryset.filter(train_type_id__in=ids)
-
         if self.action in ['list', 'retrieve']:
             self.queryset = self.queryset.select_related("train_type")
+
+        if self.action == "list":
+            params = self.request.query_params.get("train_type", None)
+            if params:
+                ids = [int(param) for param in params.split(",")]
+                self.queryset = self.queryset.filter(train_type_id__in=ids)
 
         return self.queryset
 
@@ -40,6 +41,14 @@ class TrainViewSet(viewsets.ModelViewSet):
 class StationViewSet(viewsets.ModelViewSet):
     queryset = Station.objects.all()
     serializer_class = StationSerializer
+
+    def get_queryset(self):
+        if self.action == "list":
+            station_name = self.request.query_params.get("name", None)
+            if station_name:
+                self.queryset = self.queryset.filter(name__icontains=station_name)
+
+        return self.queryset
 
 
 class RouteViewSet(viewsets.ModelViewSet):

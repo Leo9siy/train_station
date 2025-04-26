@@ -9,6 +9,11 @@ def validate_name(name: str):
         raise ValidationError(f"Argument must be alphanumeric and capitalized, not {name}")
 
 
+def validate_latitude(latitude: float):
+    if not (-90 <= latitude <= 90):
+        raise ValidationError(f"Argument must be between -90 and 90, not {latitude}")
+
+
 class Crew(models.Model):
     first_name = models.CharField(max_length=255, validators=[validate_name])
     last_name = models.CharField(max_length=255, validators=[validate_name])
@@ -57,8 +62,16 @@ class Train(models.Model):
 
 class Station(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    latitude = models.FloatField(
+        validators=[
+            validate_latitude
+        ]
+    )
+    longitude = models.FloatField(
+        validators=[
+            validate_latitude
+        ]
+    )
 
     class Meta:
         unique_together = ('latitude', 'longitude')
