@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -28,7 +29,7 @@ class TrainType(models.Model):
 
 
 class Train(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     cargo_num = models.IntegerField(
         validators=[
             MinValueValidator(0)
@@ -48,9 +49,12 @@ class Train(models.Model):
 
 
 class Station(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
+
+    class Meta:
+        unique_together = ('latitude', 'longitude')
 
     def __str__(self):
         return f"{self.name}"
@@ -59,7 +63,11 @@ class Station(models.Model):
 class Route(models.Model):
     source = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='source_route')
     destination = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='destination_route')
-    distance = models.IntegerField()
+    distance = models.IntegerField(
+        validators=[
+            MinValueValidator(0)
+        ]
+    )
 
     class Meta:
         unique_together = ('source', 'destination')
@@ -82,8 +90,12 @@ class Journey(models.Model):
             ),
         ]
 
+    def clean(self):
+        if self.arrival_time > self.departure_time:
+            raise ValidationError("Arrival time must be later than departure time")
+
     def __str__(self):
-        return f"{self.train} -> {self.route}"
+        return f"Train: {self.train} -> Route: {self.route}"
 
 
 class Order(models.Model):
@@ -106,10 +118,12 @@ class Ticket(models.Model):
         ]
     )
 
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_tickets')
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE)
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='tickets')
 
     class Meta:
-        unique_together = ('cargo', 'seat')
+        unique_together = ('cargo', 'seat', "journey")
 
     def __str__(self):
         return f"{self.cargo} {self.seat} {self.order}"

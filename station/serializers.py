@@ -24,7 +24,10 @@ class TrainSerializer(serializers.ModelSerializer):
 
 
 class TrainDetailSerializer(TrainSerializer):
-    train_type = TrainTypeSerializer()
+    train_type = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field="name"
+    )
 
 
 class StationSerializer(serializers.ModelSerializer):
@@ -52,20 +55,25 @@ class JourneySerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
 
+    def validate(self, data):
+        if data["departure_time"] > data["arrival_time"]:
+            raise serializers.ValidationError("arrival_time must be later than departure_time")
+        return data
+
+
 class JourneyDetailSerializer(JourneySerializer):
     route = RouteDetailSerializer(many=False, read_only=True)
-    train = TrainSerializer(many=False, read_only=True)
+    train = TrainDetailSerializer(many=False, read_only=True)
 
 
 class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
-        fields = ["cargo", "seat"]
+        fields = ["cargo", "seat", "journey"]
         read_only_fields = ('id',)
 
     def create(self, validated_data):
-        print(validated_data)
-        order = Order.objects.create(user=validated_data.get("user"))
+        order = Order.objects.create(user=validated_data.pop("user"))
         ticket = Ticket.objects.create(order=order, **validated_data)
         return ticket
 
@@ -75,7 +83,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["tickets", "user"]
+        fields = ["tickets"]
         read_only_fields = ('id',)
 
     def create(self, validated_data):

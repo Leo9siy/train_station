@@ -77,6 +77,10 @@ class OrderViewSet(viewsets.ModelViewSet):
         user = self.request.user
         serializer.save(user=user)
 
+    def get_queryset(self):
+        if self.action in ['list', 'retrieve']:
+            return self.queryset.filter(user=self.request.user)
+
 
 class TicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
