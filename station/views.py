@@ -1,7 +1,5 @@
-from django.shortcuts import render
 from rest_framework import viewsets
 
-from station import serializers
 from station.models import Crew, Train, TrainType, Station, Route, Journey, Order, Ticket
 from station.serializers import (CrewSerializer, TrainSerializer,
                                  TrainTypeSerializer, StationSerializer, RouteSerializer, JourneySerializer,
@@ -14,6 +12,11 @@ class CrewViewSet(viewsets.ModelViewSet):
     serializer_class = CrewSerializer
 
 
+class TrainTypeViewSet(viewsets.ModelViewSet):
+    queryset = TrainType.objects.all()
+    serializer_class = TrainTypeSerializer
+
+
 class TrainViewSet(viewsets.ModelViewSet):
     queryset = Train.objects.all()
 
@@ -21,16 +24,6 @@ class TrainViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return TrainDetailSerializer
         return TrainSerializer
-
-
-class TrainTypeViewSet(viewsets.ModelViewSet):
-    queryset = TrainType.objects.all()
-
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return TrainTypeSerializer
-        else:
-            return TrainTypeSerializer
 
 
 class StationViewSet(viewsets.ModelViewSet):

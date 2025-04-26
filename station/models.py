@@ -1,12 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 
+def validate_name(name: str):
+    if not name.isalpha() or not name.capitalize():
+        raise ValidationError(f"Argument must be alphanumeric and capitalized, not {name}")
+
+
 class Crew(models.Model):
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    first_name = models.CharField(max_length=255, validators=[validate_name])
+    last_name = models.CharField(max_length=255, validators=[validate_name])
 
     class Meta:
         unique_together = ('first_name', 'last_name')
@@ -17,32 +22,29 @@ class Crew(models.Model):
 
 
 class TrainType(models.Model):
-    name = models.CharField(max_length=100)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['name'], name='unique_name')
-        ]
+    name = models.CharField(max_length=255, unique=True, validators=[validate_name])
 
     def __str__(self):
         return f"{self.name}"
 
 
 class Train(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=255, unique=True)
     cargo_num = models.IntegerField(
         validators=[
-            MinValueValidator(0)
+            MinValueValidator(0),
+            MaxValueValidator(500)
         ],
     )
 
     places_in_cargo = models.IntegerField(
         validators=[
-            MinValueValidator(0)
+            MinValueValidator(0),
+            MaxValueValidator(500)
         ],
     )
 
-    train_type = models.ForeignKey(TrainType, on_delete=models.CASCADE)
+    train_type = models.ForeignKey(TrainType, on_delete=models.CASCADE, related_name='trains')
 
     def __str__(self):
         return f"{self.name}"

@@ -1,19 +1,25 @@
 from rest_framework import serializers
 
-from station.models import Crew, TrainType, Train, Station, Route, Journey, Order, Ticket
+from station.models import Crew, TrainType, Train, Station, Route, Journey, Order, Ticket, validate_name
 
 
 class CrewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Crew
-        fields = ["first_name", "last_name"]
+        fields = ["id", "first_name", "last_name"]
         read_only_fields = ('id',)
+
+    def validate(self, data):
+        for name in ["first_name", "last_name"]:
+            validate_name(data[name])
+
+        return data
 
 
 class TrainTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrainType
-        fields = ["name"]
+        fields = ["id", "name"]
         read_only_fields = ('id',)
 
 
