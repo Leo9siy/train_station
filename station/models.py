@@ -46,12 +46,17 @@ class Train(models.Model):
 
     train_type = models.ForeignKey(TrainType, on_delete=models.CASCADE, related_name='trains')
 
+    @property
+    def is_big(self):
+        return self.cargo_num * self.places_in_cargo > 250
+
+
     def __str__(self):
         return f"{self.name}"
 
 
 class Station(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=255, unique=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
 

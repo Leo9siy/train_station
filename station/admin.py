@@ -21,8 +21,8 @@ class TrainTypeAdmin(admin.ModelAdmin):
 @admin.register(Train)
 class TrainAdmin(admin.ModelAdmin):
     model = Train
-    list_filter = ["name"]
-    search_fields = ["name"]
+    list_filter = ["name", "train_type"]
+    search_fields = ["name", "train_type__name"]
 
 
 class TicketInline(admin.TabularInline):
