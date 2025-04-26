@@ -57,19 +57,30 @@ class Station(models.Model):
 
 
 class Route(models.Model):
-    source = models.ForeignKey(Station, on_delete=models.CASCADE)
-    destination = models.ForeignKey(Station, on_delete=models.CASCADE)
+    source = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='source_route')
+    destination = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='destination_route')
     distance = models.IntegerField()
+
+    class Meta:
+        unique_together = ('source', 'destination')
 
     def __str__(self):
         return f"{self.source} -> {self.destination}"
 
 
 class Journey(models.Model):
-    route = models.ForeignKey(Route, on_delete=models.CASCADE)
-    train = models.ForeignKey(Train, on_delete=models.CASCADE)
+    route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name='route_journey')
+    train = models.ForeignKey(Train, on_delete=models.CASCADE, related_name='train_journey')
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["route", "train"],
+                name='unique_route_train'
+            ),
+        ]
 
     def __str__(self):
         return f"{self.train} -> {self.route}"
@@ -95,7 +106,10 @@ class Ticket(models.Model):
         ]
     )
 
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_tickets')
+
+    class Meta:
+        unique_together = ('cargo', 'seat')
 
     def __str__(self):
         return f"{self.cargo} {self.seat} {self.order}"
