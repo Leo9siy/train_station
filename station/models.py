@@ -1,7 +1,10 @@
+from datetime import datetime
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.utils import timezone
 
 
 def validate_name(name: str):
@@ -12,6 +15,11 @@ def validate_name(name: str):
 def validate_latitude(latitude: float):
     if not (-90 <= latitude <= 90):
         raise ValidationError(f"Argument must be between -90 and 90, not {latitude}")
+
+
+def validate_departure_and_arrival(departure, arrival):
+    if departure > arrival:
+        raise ValidationError("Arrival must be earlier than departure")
 
 
 class Crew(models.Model):
@@ -102,20 +110,20 @@ class Journey(models.Model):
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
 
+    @property
+    def accessed(self):
+        return self.departure_time < timezone.now()
+
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["route", "train"],
-                name='unique_route_train'
-            ),
-        ]
+        unique_together = ('route', 'train')
+        ordering = ["-departure_time"]
+
 
     def clean(self):
-        if self.arrival_time > self.departure_time:
-            raise ValidationError("Arrival time must be later than departure time")
+        validate_departure_and_arrival(self.departure_time, self.arrival_time)
 
     def __str__(self):
-        return f"Train: {self.train} -> Route: {self.route}"
+        return f"Train: {self.train} -> Route: {self.route} -> Accessed: {self.accessed}"
 
 
 class Order(models.Model):

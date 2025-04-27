@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import viewsets
 
 from station.models import Crew, Train, TrainType, Station, Route, Journey, Order, Ticket
@@ -55,8 +56,18 @@ class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.all()
 
     def get_queryset(self):
+        if self.action == "list":
+            params = self.request.query_params
+            if params:
+                sources = params.get("source", None)
+                if sources:
+                    self.queryset = self.queryset.filter(source_id__in=[int(id) for id in sources.split(",")])
+                destinations = params.get("destination", None)
+                if destinations:
+                    self.queryset = self.queryset.filter(destination_id__in=[int(id) for id in destinations.split(",")])
+
         if self.action in ['list', 'retrieve']:
-            return self.queryset.select_related("source", "destination")
+            self.queryset = self.queryset.select_related("source", "destination")
 
         return self.queryset
 
@@ -71,8 +82,43 @@ class JourneyViewSet(viewsets.ModelViewSet):
     queryset = Journey.objects.all()
 
     def get_queryset(self):
+        if self.action == 'list':
+            params = self.request.query_params
+            if params:
+                accessed = params.get("accessed", None)
+                if accessed:
+                    if accessed == 1:
+                        self.queryset = self.queryset.filter(departure_time__lt=timezone.now())
+                    else:
+                        self.queryset = self.queryset.filter(departure_time__gt=timezone.now())
+
+                departure_time = params.get("departure_time", None)
+                if departure_time:
+                    self.queryset = self.queryset.filter(departure_time__date=departure_time)
+
+                arrival_time = params.get("arrival_time", None)
+                if arrival_time:
+                    self.queryset = self.queryset.filter(arrival_time__date=arrival_time)
+
+                route = params.get("route", None)
+                if route:
+                    ids = [int(id) for id in route.split(",")]
+                    self.queryset = self.queryset.filter(route__in=ids)
+
+                train = params.get("train", None)
+                if train:
+                    ids = [int(id) for id in train.split(",")]
+                    self.queryset = self.queryset.filter(train_id__in=train)
+
+                self.queryset = self.queryset.distinct()
+
+
         if self.action in ['list', 'retrieve']:
-            return self.queryset.select_related()
+            return self.queryset.select_related(
+                "route__source",
+                "route__destination",
+                "train__train_type"
+            )
         return self.queryset
 
     def get_serializer_class(self):

@@ -3,7 +3,7 @@ from rest_framework import serializers
 from station.models import (Crew, TrainType, Train,
                             Station, Route, Journey,
                             Order, Ticket, validate_name,
-                            validate_latitude)
+                            validate_latitude, validate_departure_and_arrival)
 
 
 class CrewSerializer(serializers.ModelSerializer):
@@ -58,7 +58,7 @@ class RouteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Route
-        fields = ["source", "destination", "distance"]
+        fields = ["id", "source", "destination", "distance"]
         read_only_fields = ('id',)
 
 
@@ -71,13 +71,18 @@ class JourneySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Journey
-        fields = ["id", "route", "train", "departure_time", "arrival_time"]
+        fields = ["id", "accessed", "route",
+                  "train", "departure_time",
+                  "arrival_time"]
         read_only_fields = ('id',)
 
 
     def validate(self, data):
-        if data["departure_time"] > data["arrival_time"]:
-            raise serializers.ValidationError("arrival_time must be later than departure_time")
+        validate_departure_and_arrival(
+            data["departure_time"],
+            data["arrival_time"]
+        )
+
         return data
 
 
