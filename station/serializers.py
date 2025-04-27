@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from station.models import (Crew, TrainType, Train,
@@ -68,19 +69,15 @@ class RouteDetailSerializer(RouteSerializer):
 
 
 class JourneySerializer(serializers.ModelSerializer):
-
     all_seats = serializers.IntegerField(
         read_only=True,
         source="train.all_seats",
     )
     seats_available = serializers.IntegerField(read_only=True)
 
-    # def get_free_tickets(self, obj):
-    #     return obj.all_seats - obj.tickets.count()
-
     class Meta:
         model = Journey
-        fields = ["id", "accessed", "all_seats", "tickets_available", "route",
+        fields = ["id", "accessed", "all_seats", "seats_available", "route",
                   "train", "crews", "departure_time",
                   "arrival_time"]
         read_only_fields = ('id',)
@@ -94,13 +91,12 @@ class JourneySerializer(serializers.ModelSerializer):
         return data
 
 
-
-
 class JourneyListSerializer(JourneySerializer):
     crews = serializers.SlugRelatedField(
         read_only=True,
         slug_field="full_name",
-        many=True
+        many=True,
+        allow_empty=False,
     )
 
     train = serializers.SlugRelatedField(
@@ -127,10 +123,18 @@ class TicketSerializer(serializers.ModelSerializer):
         fields = ["cargo", "seat", "journey"]
         read_only_fields = ('id',)
 
+    def validate(self, data):
+        train = data["journey"].train
+        if data["cargo"] > train.cargo_num:
+            raise serializers.ValidationError("Error")
+        return data
+
+
     def create(self, validated_data):
-        order = Order.objects.create(user=validated_data.pop("user"))
-        ticket = Ticket.objects.create(order=order, **validated_data)
-        return ticket
+        with transaction.atomic():
+            order = Order.objects.create(user=validated_data.pop("user"))
+            ticket = Ticket.objects.create(order=order, **validated_data)
+            return ticket
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -142,10 +146,11 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
     def create(self, validated_data):
-        tickets = validated_data.pop("tickets")
-        order = Order.objects.create(**validated_data)
+        with transaction.atomic():
+            tickets = validated_data.pop("tickets")
+            order = Order.objects.create(**validated_data)
 
-        for ticket in tickets:
-            Ticket.objects.create(order=order, **ticket)
+            for ticket in tickets:
+                Ticket.objects.create(order=order, **ticket)
 
-        return order
+            return order

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.admin import site
 
 from station.models import Ticket, Order, Crew, TrainType, Train, Station, Route, Journey
 
@@ -57,3 +58,12 @@ class TicketInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     inlines = [TicketInline]
+
+@admin.register(Ticket)
+class TicketAdmin(admin.ModelAdmin):
+    model = Ticket
+    fields = ["cargo", "seat", "journey"]
+
+    def save_model(self, request, obj, form, change):
+        obj.order = Order.objects.create(user=request.user)
+        super().save_model(request, obj, form, change)

@@ -164,5 +164,15 @@ class Ticket(models.Model):
     class Meta:
         unique_together = ('cargo', 'seat', "journey")
 
+    def clean(self):
+        if not self.journey.accessed:
+            raise ValidationError("Journey is not accessible")
+
+        train = self.journey.train
+        if self.cargo > train.cargo_num:
+            raise ValidationError(f"Cargo must be less than {train.cargo_num}")
+        if self.seat > train.places_in_cargo:
+            raise ValidationError(f"Seat must be less than {train.places_in_cargo}")
+
     def __str__(self):
-        return f"{self.cargo} {self.seat} {self.order}"
+        return f"{self.cargo} {self.seat} {self.journey}"
