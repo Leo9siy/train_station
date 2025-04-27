@@ -1,17 +1,26 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from station.models import (Crew, TrainType, Train,
-                            Station, Route, Journey,
-                            Order, Ticket, validate_name,
-                            validate_latitude, validate_departure_and_arrival)
+from station.models import (
+    Crew,
+    TrainType,
+    Train,
+    Station,
+    Route,
+    Journey,
+    Order,
+    Ticket,
+    validate_name,
+    validate_latitude,
+    validate_departure_and_arrival,
+)
 
 
 class CrewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Crew
         fields = ["id", "first_name", "last_name"]
-        read_only_fields = ('id',)
+        read_only_fields = ("id",)
 
     def validate(self, data):
         for name in ["first_name", "last_name"]:
@@ -25,14 +34,22 @@ class TrainTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrainType
         fields = ["id", "name"]
-        read_only_fields = ('id',)
+        read_only_fields = ("id",)
 
 
 class TrainSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Train
-        fields = ["id", "name", "is_big", "all_seats", "cargo_num", "places_in_cargo", "train_type"]
+        fields = [
+            "id",
+            "name",
+            "is_big",
+            "all_seats",
+            "cargo_num",
+            "places_in_cargo",
+            "train_type",
+        ]
 
 
 class TrainDetailSerializer(TrainSerializer):
@@ -60,7 +77,7 @@ class RouteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Route
         fields = ["id", "source", "destination", "distance"]
-        read_only_fields = ('id',)
+        read_only_fields = ("id",)
 
 
 class RouteDetailSerializer(RouteSerializer):
@@ -77,10 +94,18 @@ class JourneySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Journey
-        fields = ["id", "accessed", "all_seats", "seats_available", "route",
-                  "train", "crews", "departure_time",
-                  "arrival_time"]
-        read_only_fields = ('id',)
+        fields = [
+            "id",
+            "accessed",
+            "all_seats",
+            "seats_available",
+            "route",
+            "train",
+            "crews",
+            "departure_time",
+            "arrival_time",
+        ]
+        read_only_fields = ("id",)
 
     def validate(self, data):
         validate_departure_and_arrival(
@@ -121,14 +146,13 @@ class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
         fields = ["cargo", "seat", "journey"]
-        read_only_fields = ('id',)
+        read_only_fields = ("id",)
 
     def validate(self, data):
         train = data["journey"].train
         if data["cargo"] > train.cargo_num:
             raise serializers.ValidationError("Error")
         return data
-
 
     def create(self, validated_data):
         with transaction.atomic():
@@ -143,7 +167,7 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ["tickets"]
-        read_only_fields = ('id',)
+        read_only_fields = ("id",)
 
     def create(self, validated_data):
         with transaction.atomic():

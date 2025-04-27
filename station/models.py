@@ -7,7 +7,9 @@ from django.utils import timezone
 
 def validate_name(name: str):
     if not name.isalpha() or not name.capitalize():
-        raise ValidationError(f"Argument must be alphanumeric and capitalized, not {name}")
+        raise ValidationError(
+            f"Argument must be alphanumeric and capitalized, not {name}"
+        )
 
 
 def validate_latitude(latitude: float):
@@ -24,14 +26,13 @@ class Crew(models.Model):
     first_name = models.CharField(max_length=255, validators=[validate_name])
     last_name = models.CharField(max_length=255, validators=[validate_name])
 
-
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
 
     class Meta:
-        unique_together = ('first_name', 'last_name')
-        ordering = ['first_name', 'last_name']
+        unique_together = ("first_name", "last_name")
+        ordering = ["first_name", "last_name"]
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -47,20 +48,16 @@ class TrainType(models.Model):
 class Train(models.Model):
     name = models.CharField(max_length=255, unique=True)
     cargo_num = models.IntegerField(
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(500)
-        ],
+        validators=[MinValueValidator(0), MaxValueValidator(500)],
     )
 
     places_in_cargo = models.IntegerField(
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(500)
-        ],
+        validators=[MinValueValidator(0), MaxValueValidator(500)],
     )
 
-    train_type = models.ForeignKey(TrainType, on_delete=models.CASCADE, related_name='trains')
+    train_type = models.ForeignKey(
+        TrainType, on_delete=models.CASCADE, related_name="trains"
+    )
 
     @property
     def is_big(self):
@@ -76,44 +73,40 @@ class Train(models.Model):
 
 class Station(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    latitude = models.FloatField(
-        validators=[
-            validate_latitude
-        ]
-    )
-    longitude = models.FloatField(
-        validators=[
-            validate_latitude
-        ]
-    )
+    latitude = models.FloatField(validators=[validate_latitude])
+    longitude = models.FloatField(validators=[validate_latitude])
 
     class Meta:
-        unique_together = ('latitude', 'longitude')
+        unique_together = ("latitude", "longitude")
 
     def __str__(self):
         return f"{self.name}"
 
 
 class Route(models.Model):
-    source = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='source_route')
-    destination = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='destination_route')
-    distance = models.IntegerField(
-        validators=[
-            MinValueValidator(0)
-        ]
+    source = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="source_route"
     )
+    destination = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="destination_route"
+    )
+    distance = models.IntegerField(validators=[MinValueValidator(0)])
 
     class Meta:
-        unique_together = ('source', 'destination')
+        unique_together = ("source", "destination")
 
     def __str__(self):
         return f"{self.source} -> {self.destination}"
 
 
 class Journey(models.Model):
-    crews = models.ManyToManyField(Crew, related_name='journeys')
-    route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name='route_journey')
-    train = models.ForeignKey(Train, on_delete=models.CASCADE, related_name='train_journey')
+    crews = models.ManyToManyField(Crew, related_name="journeys")
+    route = models.ForeignKey(
+        Route, on_delete=models.CASCADE, related_name="route_journey"
+    )
+    train = models.ForeignKey(
+        Train, on_delete=models.CASCADE, related_name="train_journey"
+    )
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
 
@@ -126,15 +119,16 @@ class Journey(models.Model):
     #     return self.train.all_seats - self.tickets.count()
 
     class Meta:
-        unique_together = ('route', 'train')
+        unique_together = ("route", "train")
         ordering = ["-departure_time"]
-
 
     def clean(self):
         validate_departure_and_arrival(self.departure_time, self.arrival_time)
 
     def __str__(self):
-        return f"Train: {self.train} -> Route: {self.route} -> Accessed: {self.accessed}"
+        return (
+            f"Train: {self.train} -> Route: {self.route} -> Accessed: {self.accessed}"
+        )
 
 
 class Order(models.Model):
@@ -146,23 +140,17 @@ class Order(models.Model):
 
 
 class Ticket(models.Model):
-    cargo = models.IntegerField(
-        validators=[
-            MinValueValidator(0)
-        ]
-    )
-    seat = models.IntegerField(
-        validators=[
-            MinValueValidator(0)
-        ]
+    cargo = models.IntegerField(validators=[MinValueValidator(0)])
+    seat = models.IntegerField(validators=[MinValueValidator(0)])
+
+    journey = models.ForeignKey(
+        Journey, on_delete=models.CASCADE, related_name="tickets"
     )
 
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='tickets')
-
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='tickets')
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="tickets")
 
     class Meta:
-        unique_together = ('cargo', 'seat', "journey")
+        unique_together = ("cargo", "seat", "journey")
 
     def clean(self):
         if not self.journey.accessed:
