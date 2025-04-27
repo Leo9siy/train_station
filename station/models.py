@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -25,6 +23,11 @@ def validate_departure_and_arrival(departure, arrival):
 class Crew(models.Model):
     first_name = models.CharField(max_length=255, validators=[validate_name])
     last_name = models.CharField(max_length=255, validators=[validate_name])
+
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
 
     class Meta:
         unique_together = ('first_name', 'last_name')
@@ -63,6 +66,9 @@ class Train(models.Model):
     def is_big(self):
         return self.cargo_num * self.places_in_cargo > 250
 
+    @property
+    def all_seats(self):
+        return self.cargo_num * self.places_in_cargo
 
     def __str__(self):
         return f"{self.name}"
@@ -105,6 +111,7 @@ class Route(models.Model):
 
 
 class Journey(models.Model):
+    crews = models.ManyToManyField(Crew, related_name='journeys')
     route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name='route_journey')
     train = models.ForeignKey(Train, on_delete=models.CASCADE, related_name='train_journey')
     departure_time = models.DateTimeField()
@@ -113,6 +120,10 @@ class Journey(models.Model):
     @property
     def accessed(self):
         return self.departure_time < timezone.now()
+
+    # @property
+    # def available_tickets(self):
+    #     return self.train.all_seats - self.tickets.count()
 
     class Meta:
         unique_together = ('route', 'train')
@@ -146,7 +157,7 @@ class Ticket(models.Model):
         ]
     )
 
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE)
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='tickets')
 
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='tickets')
 

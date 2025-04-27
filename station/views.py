@@ -1,3 +1,4 @@
+from django.db.models import Count, F
 from django.utils import timezone
 from rest_framework import viewsets
 
@@ -5,7 +6,7 @@ from station.models import Crew, Train, TrainType, Station, Route, Journey, Orde
 from station.serializers import (CrewSerializer, TrainSerializer,
                                  TrainTypeSerializer, StationSerializer, RouteSerializer, JourneySerializer,
                                  OrderSerializer, TicketSerializer, TrainDetailSerializer, RouteDetailSerializer,
-                                 JourneyDetailSerializer)
+                                 JourneyDetailSerializer, JourneyListSerializer)
 
 
 class CrewViewSet(viewsets.ModelViewSet):
@@ -113,17 +114,27 @@ class JourneyViewSet(viewsets.ModelViewSet):
                 self.queryset = self.queryset.distinct()
 
 
-        if self.action in ['list', 'retrieve']:
+        if self.action in ['retrieve', "list"]:
+            self.queryset = self.queryset.annotate(
+                seats_available=F("train__cargo_num")
+                                  * F("train__places_in_cargo")
+                                  - Count("tickets")
+            ).prefetch_related("tickets")
+
             return self.queryset.select_related(
                 "route__source",
                 "route__destination",
-                "train__train_type"
+                "train__train_type",
+            ).prefetch_related(
+                "crews"
             )
         return self.queryset
 
     def get_serializer_class(self):
-        if self.action in ['list', 'retrieve']:
+        if self.action in ['retrieve']:
             return JourneyDetailSerializer
+        elif self.action == "list":
+            return JourneyListSerializer
         return JourneySerializer
 
 
