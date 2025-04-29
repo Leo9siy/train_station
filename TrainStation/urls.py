@@ -17,9 +17,13 @@ Including another URLconf
 from debug_toolbar.toolbar import debug_toolbar_urls
 from django.contrib import admin
 from django.urls import path, include
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/station/", include("station.urls", namespace="station")),
     path("api/v1/user/", include("user.urls", namespace="user")),
+    path("api/doc/", SpectacularAPIView.as_view(), name="doc"),
+    path("api/doc/swagger/", SpectacularSwaggerView.as_view(url_name="doc")),
+    path("api/doc/redoc/", SpectacularRedocView.as_view(url_name="doc")),
 ] + debug_toolbar_urls()

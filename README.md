@@ -1,1 +1,32 @@
-STATION API PROJECT
+## TRAIN STATION API PROJECT
+
+## This project ll help u with Your Train Station
+
+## TECNOLOGIES
+- Python 3.13
+- Django 5.1.6
+- DRF 5.5
+
+## Setup
+
+```bash
+git clone https://github.com/Leo9siy/train_station.git
+cd project
+pip install -r requirements.txt
+python manage.pu migrate
+python manage.py runserver
+```
+
+## Before start
+
+1. Create super user with custom Email and Password
+```
+python manage.py createsuperuser
+```
+2. Login at https://127.0.0.1/api/v1/user/login
+
+3. Read more about This API at https://127.0.0.1/api/doc/swagger/
+
+## To test use
+```bash
+python manage.py test

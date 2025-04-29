@@ -1,5 +1,7 @@
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets
 
 from station.models import (
@@ -32,10 +34,58 @@ class CrewViewSet(viewsets.ModelViewSet):
     queryset = Crew.objects.all()
     serializer_class = CrewSerializer
 
+    def get_queryset(self):
+        if self.action == 'list':
+            for field in ["first_name", "last_name"]:
+                param = self.request.query_params.get(field, None)
+                if param:
+                    str_filter = {f"{field}__icontains": param}
+                    self.queryset = self.queryset.filter(**str_filter)
+        return self.queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="first_name",
+                type=OpenApiTypes.STR,
+                description="First name",
+            ),
+            OpenApiParameter(
+                name="last_name",
+                type=OpenApiTypes.STR,
+                description="Last name",
+            )
+        ],
+        description="Filter Crews by First Name and Last Name",
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+
 
 class TrainTypeViewSet(viewsets.ModelViewSet):
     queryset = TrainType.objects.all()
     serializer_class = TrainTypeSerializer
+
+    def get_queryset(self):
+        if self.action == 'list':
+            params = self.request.query_params.get("name", None)
+            if params:
+                self.queryset = self.queryset.filter(name__icontains=params)
+        return self.queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="name",
+                type=OpenApiTypes.STR,
+                description="Filter by name",
+            ),
+        ],
+        description="Filter Train Type by Name",
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class TrainViewSet(viewsets.ModelViewSet):
@@ -58,6 +108,22 @@ class TrainViewSet(viewsets.ModelViewSet):
 
         return self.queryset
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "train_type",
+                type={
+                    "type": "array",
+                    "items": {"type": "number"},
+                },
+                description="Filter by train_type id (ex. ?train_type=2,3)",
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        ### User it for filter Trains by Type ###
+        return super().list(request, *args, **kwargs)
+
 
 class StationViewSet(viewsets.ModelViewSet):
     queryset = Station.objects.all()
@@ -73,24 +139,31 @@ class StationViewSet(viewsets.ModelViewSet):
 
         return self.queryset
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "name",
+                type={
+                    "type": "string",
+                },
+                description="Filter by name",
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.all()
 
     def get_queryset(self):
         if self.action == "list":
-            params = self.request.query_params
-            if params:
-                sources = params.get("source", None)
-                if sources:
+            for field in ["source", "destination"]:
+                params = self.request.query_params.get(field, None)
+                if params:
                     self.queryset = self.queryset.filter(
-                        source_id__in=[int(id) for id in sources.split(",")]
-                    )
-                destinations = params.get("destination", None)
-                if destinations:
-                    self.queryset = self.queryset.filter(
-                        destination_id__in=
-                        [int(id) for id in destinations.split(",")]
+                        **({f"{field}_id__in": [int(id) for id in params.split(",")]})
                     )
 
         if self.action in ["list", "retrieve"]:
@@ -105,6 +178,31 @@ class RouteViewSet(viewsets.ModelViewSet):
             return RouteDetailSerializer
 
         return RouteSerializer
+
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "source",
+                type={
+                    "type": "array",
+                    "items": {"type": "number"},
+                },
+                description="Filter by source id",
+            ),
+            OpenApiParameter(
+                "destination",
+                type={
+                    "type": "array",
+                    "items": {"type": "number"},
+                },
+                description="Filter by destination id",
+            ),
+        ],
+        description="Filter by source id (ex. ?source=2,3) and destination id (ex. ?destination=2,3)",
+    )
+    def list(self, request, *args, **kwargs):
+        super().list(request, *args, **kwargs)
 
 
 class JourneyViewSet(viewsets.ModelViewSet):

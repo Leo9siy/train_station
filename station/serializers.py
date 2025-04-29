@@ -23,8 +23,8 @@ class CrewSerializer(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
     def validate(self, data):
-        for name in ["first_name", "last_name"]:
-            validate_name(data[name])
+        for key, value in data.items():
+            validate_name(value)
 
         return data
 
@@ -66,8 +66,8 @@ class StationSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "latitude", "longitude"]
 
     def validate(self, data):
-        for name in ["latitude", "longitude"]:
-            validate_latitude(data[name])
+        for _, value in data.items():
+            validate_latitude(value)
 
         return data
 

@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 
     "rest_framework",
     "rest_framework.authtoken",
+    "drf_spectacular",
 
     "station",
     "user"
@@ -138,11 +139,22 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "station.permissions.IsAdminOrReadOnly"
     ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "station.throttlings.AdminRateThrottle"
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "10/day",
+        "user": "100/day",
+        "admin": "10000/day",
+    },
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 100,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 # SIMPLE_JWT = {
 #     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
