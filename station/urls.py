@@ -13,6 +13,6 @@ router.register("orders", views.OrderViewSet)
 router.register("tickets", views.TicketViewSet)
 
 
-urlpatterns = [] + router.urls
+urlpatterns = router.urls
 
 app_name = "station"
