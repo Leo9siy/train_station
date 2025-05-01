@@ -1,0 +1,4 @@
+Dockerfile
+.idea
+.venv
+db.sqlite3
